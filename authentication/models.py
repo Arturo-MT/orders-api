@@ -1,0 +1,37 @@
+from django.db import models
+from django.contrib.auth.models import AbstractUser
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from django.conf import settings
+import os
+
+class CustomUser(AbstractUser):
+    email = models.EmailField(unique=True, blank=False, null=False, max_length=150)
+    first_name = models.CharField(max_length=150)
+    last_name = models.CharField(max_length=150)
+
+    username = models.CharField(max_length=150, unique=True, blank=True, null=True)
+    phone_number = models.CharField(unique=True, blank=True, null=True, max_length=10)
+
+    zip_code = models.CharField(max_length=12, blank=True, null=True)
+
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['first_name', 'last_name', 'username']        
+
+    def path_to_avatar(self, filename):
+        return 'avatars/temp/avatar.jpg'
+    
+    avatar = models.ImageField(upload_to=path_to_avatar, blank=True, null=True, verbose_name='avatar')
+
+    def __str__(self):
+        return self.email
+
+@receiver(post_save, sender=CustomUser)
+def update_file_path(instance, created, **kwargs):
+    if created and instance.avatar and 'temp' in instance.avatar.path:
+        initial_path = instance.avatar.path
+        new_path = settings.MEDIA_ROOT + f'/avatars/{instance.id}/avatar.jpg'
+        os.makedirs(os.path.dirname(new_path), exist_ok=True)
+        os.rename(initial_path, new_path)
+        instance.avatar.name = f'avatars/{instance.id}/avatar.jpg'
+        instance.save()
