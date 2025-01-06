@@ -94,7 +94,6 @@ class OrderViewTestCase(APITestCase):
             format='json'
         )
         order = Order.objects.get()
-        print(response.data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(Order.objects.count(), 1)
         self.assertEqual(OrderItem.objects.count(), 2)
