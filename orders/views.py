@@ -6,6 +6,7 @@ from rest_framework.permissions import IsAuthenticated
 from django.views.generic import TemplateView
 from .models import Order, OrderItem, Product, ProductCategory
 from .serializers import OrderSerializer, OrderItemSerializer, ProductSerializer, ProductCategorySerializer
+import json
 
 class HomePageView(TemplateView):
     template_name = 'home.html'
@@ -45,7 +46,8 @@ class CreateOrderView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
-        data = request.data
+        order_data = request.POST.get('order_data')
+        data = json.loads(order_data)
         customer_id = data.get('customer')
         items = data.get('items', [])
         order_type = data.get('type')
