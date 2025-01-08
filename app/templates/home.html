@@ -1,68 +1,37 @@
-{% extends "base.html" %} {% load static %} {% block title %}Inicio - Orders
-API{% endblock %} {%block content %} {% if user.is_authenticated %}
+{% extends "base.html" %} {% load static %} {% block title %}Inicio - OrdersAPI
+{% endblock %} {%block content %} {% if user.is_authenticated %}
 <h1>Productos</h1>
 <div class="row">
   <div class="col-md-6">
     <!-- Button trigger modal -->
-    <button
-      type="button"
-      class="btn btn-success"
-      data-toggle="modal"
-      data-target="#addProductModal"
-    >
+    <button type="button" class="btn btn-success" data-toggle="modal" data-target="#addProductModal">
       Agregar Producto
     </button>
 
     <!-- Button trigger modal for adding category -->
-    <button
-      type="button"
-      class="btn btn-secondary"
-      data-toggle="modal"
-      data-target="#addCategoryModal"
-    >
+    <button type="button" class="btn btn-secondary" data-toggle="modal" data-target="#addCategoryModal">
       Agregar Categoría
     </button>
 
     <!-- Modal for adding category -->
-    <div
-      class="modal fade"
-      id="addCategoryModal"
-      tabindex="-1"
-      role="dialog"
-      aria-labelledby="addCategoryModalLabel"
-      aria-hidden="true"
-    >
+    <div class="modal fade" id="addCategoryModal" tabindex="-1" role="dialog" aria-labelledby="addCategoryModalLabel"
+      aria-hidden="true">
       <div class="modal-dialog" role="document">
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title" id="addCategoryModalLabel">
               Agregar Categoría
             </h5>
-            <button
-              type="button"
-              class="close"
-              data-dismiss="modal"
-              aria-label="Close"
-            >
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
               <span aria-hidden="true">&times;</span>
             </button>
           </div>
           <div class="modal-body">
-            <form
-              id="addCategoryForm"
-              method="post"
-              action="{% url 'productcategory-list' %}"
-            >
+            <form id="addCategoryForm" method="post" action="{% url 'productcategory-list' %}">
               {% csrf_token %}
               <div class="form-group">
                 <label for="categoryName">Nombre de la Categoría</label>
-                <input
-                  type="text"
-                  class="form-control"
-                  id="categoryName"
-                  name="name"
-                  required
-                />
+                <input type="text" class="form-control" id="categoryName" name="name" required />
               </div>
               <button type="submit" class="btn btn-primary">Agregar</button>
             </form>
@@ -72,64 +41,32 @@ API{% endblock %} {%block content %} {% if user.is_authenticated %}
     </div>
 
     <!-- Modal for adding product -->
-    <div
-      class="modal fade"
-      id="addProductModal"
-      tabindex="-1"
-      role="dialog"
-      aria-labelledby="addProductModalLabel"
-      aria-hidden="true"
-    >
+    <div class="modal fade" id="addProductModal" tabindex="-1" role="dialog" aria-labelledby="addProductModalLabel"
+      aria-hidden="true">
       <div class="modal-dialog" role="document">
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title" id="addProductModalLabel">
               Agregar Producto
             </h5>
-            <button
-              type="button"
-              class="close"
-              data-dismiss="modal"
-              aria-label="Close"
-            >
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
               <span aria-hidden="true">&times;</span>
             </button>
           </div>
           <div class="modal-body">
-            <form
-              id="addProductForm"
-              method="post"
-              action="{% url 'product-list' %}"
-            >
+            <form id="addProductForm" method="post" action="{% url 'product-list' %}">
               {% csrf_token %}
               <div class="form-group">
                 <label for="productName">Nombre del Producto</label>
-                <input
-                  type="text"
-                  class="form-control"
-                  id="productName"
-                  name="name"
-                  required
-                />
+                <input type="text" class="form-control" id="productName" name="name" required />
               </div>
               <div class="form-group">
                 <label for="productDescription">Descripción</label>
-                <textarea
-                  class="form-control"
-                  id="productDescription"
-                  name="description"
-                  rows="3"
-                  required
-                ></textarea>
+                <textarea class="form-control" id="productDescription" name="description" rows="3" required></textarea>
               </div>
               <div class="form-group">
                 <label for="productCategory">Categoría</label>
-                <select
-                  class="form-control"
-                  id="productCategory"
-                  name="category"
-                  required
-                >
+                <select class="form-control" id="productCategory" name="category" required>
                   {% for category in categories %}
                   <option value="{{ category.id }}">{{ category.name }}</option>
                   {% endfor %}
@@ -137,13 +74,7 @@ API{% endblock %} {%block content %} {% if user.is_authenticated %}
               </div>
               <div class="form-group">
                 <label for="price">Precio</label>
-                <input
-                  type="number"
-                  class="form-control"
-                  id="productPrice"
-                  name="price"
-                  required
-                />
+                <input type="number" class="form-control" id="productPrice" name="price" required />
               </div>
               <button type="submit" class="btn btn-primary">Agregar</button>
             </form>
@@ -155,11 +86,7 @@ API{% endblock %} {%block content %} {% if user.is_authenticated %}
     <!-- Filter by category -->
     <div class="form-group mt-3">
       <label for="categoryFilter">Filtrar por Categoría</label>
-      <select
-        class="form-control"
-        id="categoryFilter"
-        onchange="filterByCategory(this.value)"
-      >
+      <select class="form-control" id="categoryFilter" onchange="filterByCategory(this.value)">
         <option value="">Todas</option>
         {% for category in categories %}
         <option value="{{ category.id }}">{{ category.name }}</option>
@@ -178,10 +105,7 @@ API{% endblock %} {%block content %} {% if user.is_authenticated %}
             <p class="card-text">
               <strong>Precio:</strong> ${{ product.price }}
             </p>
-            <button
-              class="btn btn-primary"
-              onclick="addToOrder({{product.id}}, '{{product.name}}')"
-            >
+            <button class="btn btn-primary" onclick="addToOrder({{product.id}}, '{{product.name}}')">
               Agregar
             </button>
           </div>
@@ -193,26 +117,30 @@ API{% endblock %} {%block content %} {% if user.is_authenticated %}
 
   <div class="col-md-6">
     <h2>Orden</h2>
-    <input
-      type="radio"
-      id="for-here"
-      name="order-type"
-      value="F"
-      checked
-      onchange="updateOrderType(this.value)"
-    />
-    <label for="for-here">Para aquí</label>
-    <input
-      type="radio"
-      id="to-go"
-      name="order-type"
-      value="T"
-      onchange="updateOrderType(this.value)"
-    />
-    <label for="to-go">Para llevar</label>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <div class="d-flex align-items-center">
+        <div class="mr-3">
+          <input type="radio" id="for-here" name="order-type" value="F" checked
+            onchange="updateOrderType(this.value)" />
+          <label for="for-here">Para aquí</label>
+        </div>
+        <div>
+          <input type="radio" id="to-go" name="order-type" value="T" onchange="updateOrderType(this.value)" />
+          <label for="to-go">Para llevar</label>
+        </div>
+      </div>
+      <form method="post" action="{% url 'create-order' %}">
+        {% csrf_token %}
+        <input type="hidden" name="order_data" id="order-json-input" />
+        <button type="submit" class="btn btn-primary" id="generate-order-button" disabled>
+          Generar orden
+        </button>
+      </form>
+    </div>
     <ul id="order-items"></ul>
-    <pre id="order-json"></pre>
+    <pre class="d-none" id="order-json"></pre>
   </div>
+</div>
 </div>
 {% else %}
 <div class="alert alert-warning" role="alert">

@@ -38,9 +38,22 @@ function removeFromOrder(index) {
   renderOrder()
 }
 
+function updateOrderJson() {
+  const orderJsonPre = document.getElementById('order-json')
+  const orderJsonInput = document.getElementById('order-json-input')
+  const generateOrderButton = document.getElementById('generate-order-button')
+  const orderJson = JSON.stringify(order, null, 2)
+  orderJsonPre.textContent = orderJson
+  orderJsonInput.value = orderJson
+  generateOrderButton.disabled = order.items.length === 0
+}
+
+window.copyPreContentToHiddenInput = function () {
+  orderJsonInput.value = orderJsonPre.textContent
+}
+
 function renderOrder() {
   const orderItemsList = document.getElementById('order-items')
-  const orderJsonPre = document.getElementById('order-json')
   orderItemsList.innerHTML = ''
   order.items.forEach((item, index) => {
     const listItem = document.createElement('li')
@@ -102,4 +115,5 @@ function renderOrder() {
 
     orderItemsList.appendChild(listItem)
   })
+  updateOrderJson()
 }
