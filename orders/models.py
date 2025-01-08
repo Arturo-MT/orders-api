@@ -16,7 +16,7 @@ class ProductCategory(models.Model):
 
 class Product(models.Model):
     name = models.CharField(max_length=255)
-    description = models.TextField()
+    description = models.TextField(blank=True, null=True)
     price = models.DecimalField(max_digits=10, decimal_places=2)
     #ToDo: Update category to an actual default category defined in the database
     category = models.ForeignKey(ProductCategory, on_delete=models.CASCADE, blank=True, null=True)

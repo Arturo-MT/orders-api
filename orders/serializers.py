@@ -10,7 +10,7 @@ class ProductSerializer(serializers.ModelSerializer):
     category = serializers.PrimaryKeyRelatedField(queryset=ProductCategory.objects.all())
     class Meta:
         model = Product
-        fields = ['id', 'name', 'description', 'price', 'category', 'preview']
+        fields = ['id', 'name', 'price', 'category', 'preview']
 
 class OrderItemSerializer(serializers.ModelSerializer):
     class NestedProductSerializer(serializers.ModelSerializer):
