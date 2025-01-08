@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.hashers import make_password
 from rest_framework import status, generics
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -42,6 +43,7 @@ class RegisterView(generics.CreateAPIView):
     def post(self, request):
         serializer = UserSerializer(data=request.data)
         if serializer.is_valid():
+            serializer.validated_data['password'] = make_password(serializer.validated_data['password'])
             serializer.save()
             #ToDo: Give a response when migrate to a separate frontend
             return redirect('/')

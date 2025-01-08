@@ -1,9 +1,20 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import BaseUserManager
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.conf import settings
 import os
+
+class CustomUserManager(BaseUserManager):
+    def create_user(self, email, password=None, **extra_fields):
+        if not email:
+            raise ValueError('The Email field must be set')
+        email = self.normalize_email(email)
+        user = self.model(email=email, **extra_fields)
+        user.set_password(password)
+        user.save(using=self._db)
+        return user
 
 class CustomUser(AbstractUser):
     email = models.EmailField(unique=True, blank=False, null=False, max_length=150)
@@ -14,6 +25,8 @@ class CustomUser(AbstractUser):
     phone_number = models.CharField(unique=True, blank=True, null=True, max_length=10)
 
     zip_code = models.CharField(max_length=12, blank=True, null=True)
+
+    objects = CustomUserManager()
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['first_name', 'last_name', 'username']        
