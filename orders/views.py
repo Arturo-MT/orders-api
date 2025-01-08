@@ -13,6 +13,7 @@ class HomePageView(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['products'] = Product.objects.all()
+        context['categories'] = ProductCategory.objects.all()
         return context
 
 class ProductCategoryViewSet(viewsets.ModelViewSet):
