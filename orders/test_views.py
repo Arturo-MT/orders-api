@@ -29,13 +29,16 @@ class ProductCategoryViewSetTests(TestCase):
         response = self.client.post(self.url, data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(ProductCategory.objects.count(), 2)
-        self.assertEqual(ProductCategory.objects.get(id=response.data['id']).name, 'Food')
+        self.assertEqual(ProductCategory.objects.get(
+            id=response.data['id']).name, 'Food')
+
 
 class ProductViewSetTests(TestCase):
     def setUp(self):
         self.client = APIClient()
         self.category = ProductCategory.objects.create(name='Drinks')
-        self.product = Product.objects.create(name='Soda', category=self.category, price=10.00)
+        self.product = Product.objects.create(
+            name='Soda', category=self.category, price=10.00)
         self.url = reverse('product-list')
         self.user_model = get_user_model()
         self.superuser = self.user_model.objects.create_superuser(
@@ -66,7 +69,9 @@ class ProductViewSetTests(TestCase):
         response = self.client.post(self.url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(Product.objects.count(), 2)
-        self.assertEqual(Product.objects.get(id=response.data['id']).name, 'Soda')
+        self.assertEqual(Product.objects.get(
+            id=response.data['id']).name, 'Soda')
+
 
 class OrderViewTestCase(APITestCase):
     def setUp(self):
@@ -93,11 +98,11 @@ class OrderViewTestCase(APITestCase):
             description='This is a test product 2',
             category=self.category
         )
-    
+
     def test_create_order(self):
         self.client.force_authenticate(user=self.superuser)
         response = self.client.post(
-            reverse('create-order'),
+            reverse('create_order'),
             {
                 'customer': self.superuser.id,
                 'items': [
@@ -110,7 +115,7 @@ class OrderViewTestCase(APITestCase):
                         'quantity': 1
                     }
                 ],
-                'type': 'T' # To go
+                'type': 'T'  # To go
             },
             format='json'
         )
