@@ -16,6 +16,8 @@ function filterByCategory(categoryId) {
 
 let order = {
   type: 'F',
+  customer_name: '',
+  store: 1,
   items: []
 }
 
@@ -24,11 +26,17 @@ function updateOrderType(type) {
   renderOrder()
 }
 
+function updateCustomerName(customerName) {
+  order.customer_name = customerName
+  renderOrder()
+}
+
 function addToOrder(productId, productName) {
   order.items.push({
     product: productId,
     quantity: 1,
-    name: productName
+    name: productName,
+    description: ''
   })
   renderOrder()
 }
@@ -50,6 +58,26 @@ function updateOrderJson() {
 
 window.copyPreContentToHiddenInput = function () {
   orderJsonInput.value = orderJsonPre.textContent
+}
+
+function clearOrder() {
+  const confirmation = confirm('¿Está seguro que desea limpiar la orden?')
+  if (!confirmation) {
+    return
+  }
+  const defaultType = document.getElementById('for-here')
+  defaultType.checked = true
+  order = {
+    type: 'F',
+    customer_name: '',
+    store: 1,
+    items: []
+  }
+  renderOrder()
+}
+
+function updateOrderStore(storeId) {
+  order.store = storeId
 }
 
 function renderOrder() {
