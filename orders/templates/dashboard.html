@@ -16,46 +16,49 @@
             <h4>Total Recaudado: ${{ total_sales|default:"0.00" }}</h4>
         </div>
     </div>
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Fecha</th>
-                <th>Productos</th>
-                <th>Total</th>
-                <th>Acciones</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for order in orders %}
-            <tr>
-                <td>{{ order.order_number }}</td>
-                <td>{{ order.created_at }}</td>
-                <td>
-                    <ul>
-                        {% for item in order.orderitem_set.all %}
-                        <li>{{ item.product.name }} ({{ item.quantity }})</li>
-                        {% if item.description %}
+    <div style="max-height: 400px; overflow-y: auto;">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Fecha</th>
+                    <th>Productos</th>
+                    <th>Total</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in orders %}
+                <tr>
+                    <td>{{ order.order_number }}</td>
+                    <td>{{ order.created_at }}</td>
+                    <td>
                         <ul>
-                            <li>{{ item.description }}</li>
+                            {% for item in order.orderitem_set.all %}
+                            <li>{{ item.product.name }} ({{ item.quantity }})</li>
+                            {% if item.description %}
+                            <ul>
+                                <li>{{ item.description }}</li>
+                            </ul>
+                            {% endif %}
+                            {% endfor %}
                         </ul>
-                        {% endif %}
-                        {% endfor %}
-                    </ul>
-                </td>
-                <td>
-                    ${{ order.total }}
-                </td>
-                <td>
-                    <form method="post" action="{% url 'print_ticket' %}">
-                        {% csrf_token %}
-                        <input type="hidden" name="order_id" value="{{ order.id }}">
-                        <button class="btn btn-primary" type="submit">Imprimir Ticket</button>
-                    </form>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+                    </td>
+                    <td>
+                        ${{ order.total }}
+                    </td>
+                    <td>
+                        <form method="post" action="{% url 'print_ticket' %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="order_id" value="{{ order.id }}">
+                            <button class="btn btn-primary" type="submit">Imprimir Ticket</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
 </div>
 {% endblock %}
