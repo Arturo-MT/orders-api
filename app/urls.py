@@ -2,7 +2,8 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
-from orders.views import ProductCategoryViewSet, ProductViewSet, OrderItemViewSet, OrderViewSet, CreateOrderView, HomePageView, DashboardView, PrintTicketView, StoreViewSet
+from orders.views import ProductCategoryViewSet, ProductViewSet, OrderItemViewSet, OrderViewSet, StoreViewSet
+from orders.views import CategoryTemplateView, HomePageView, DashboardView, PrintTicketView, ProductTemplateView, CreateOrderTemplateView
 from rest_framework import routers
 
 router = routers.DefaultRouter()
@@ -20,8 +21,12 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include(router.urls)),
     path('api/auth/', include('authentication.urls')),
-    path('api/create-order/', CreateOrderView.as_view(), name='create_order'),
+    path('api/create-order/', CreateOrderTemplateView.as_view(), name='create_order'),
     path('api/print-ticket/', PrintTicketView.as_view(), name='print_ticket'),
+    path('categories/', CategoryTemplateView.as_view(),
+         name='category_template_view'),
+    path('products/', ProductTemplateView.as_view(),
+         name='product_template_view'),
 ]
 
 if settings.DEBUG:
