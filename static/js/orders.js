@@ -1,15 +1,31 @@
 function filterByCategory(categoryId) {
   const productsGrid = document.getElementById('productsGrid')
-  const products = productsGrid.getElementsByClassName('col-md-4')
-  for (let product of products) {
-    if (categoryId) {
-      if (product.dataset.category === categoryId) {
-        product.style.display = 'block'
+  const productsList = document.getElementById('productsList')
+  if (productsGrid) {
+    const products = productsGrid.getElementsByClassName('col-md-4')
+    for (let product of products) {
+      if (categoryId) {
+        if (product.dataset.category === categoryId) {
+          product.style.display = 'block'
+        } else {
+          product.style.display = 'none'
+        }
       } else {
-        product.style.display = 'none'
+        product.style.display = 'block'
       }
-    } else {
-      product.style.display = 'block'
+    }
+  } else if (productsList) {
+    const products = productsList.getElementsByClassName('list-item')
+    for (let product of products) {
+      if (categoryId) {
+        if (product.dataset.category === categoryId) {
+          product.style.display = 'block'
+        } else {
+          product.style.display = 'none'
+        }
+      } else {
+        product.style.display = 'block'
+      }
     }
   }
 }
@@ -113,11 +129,11 @@ function renderOrder() {
     buttonCol.className = 'col-md-4'
     const removeButton = document.createElement('button')
     removeButton.innerHTML = '<i class="fas fa-trash-alt"></i>'
-    removeButton.className = 'btn btn-danger btn-sm ml-2'
+    removeButton.className = 'btn btn-danger btn-sm ms-2'
     removeButton.onclick = () => removeFromOrder(index)
     const commentButton = document.createElement('button')
     commentButton.innerHTML = '<i class="fas fa-comment"></i>'
-    commentButton.className = 'btn btn-secondary btn-sm ml-2'
+    commentButton.className = 'btn btn-secondary btn-sm ms-2'
     commentButton.onclick = () => {
       const comment = prompt('Ingrese su comentario:')
       if (comment) {
