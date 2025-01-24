@@ -1,9 +1,10 @@
-from django.db import models
-from django.utils.timezone import now
-from django.db.models.signals import post_save
-from django.dispatch import receiver
 from django.conf import settings
-import datetime
+from django.db import models
+from django.db.models.signals import post_save
+from django.db.models import Sum
+from django.dispatch import receiver
+from django.utils.timezone import now
+from datetime import timedelta
 import os
 
 
@@ -12,6 +13,35 @@ class Store(models.Model):
 
     def __str__(self):
         return self.name
+
+    def get_orders_count(self, start_date=None, end_date=None):
+        orders = Order.objects.filter(store=self)
+        if start_date and end_date:
+            orders = orders.filter(created_at__range=(start_date, end_date))
+        return orders.count()
+
+    def get_revenue(self, start_date=None, end_date=None):
+        orders = Order.objects.filter(store=self)
+        if start_date and end_date:
+            orders = orders.filter(created_at__range=(start_date, end_date))
+        return orders.aggregate(total_revenue=Sum('total'))['total_revenue'] or 0
+
+    def get_stats(self):
+        today = now().date()
+        start_of_week = today - timedelta(days=today.weekday())
+        start_of_month = today.replace(day=1)
+        start_of_year = today.replace(month=1, day=1)
+
+        return {
+            'orders_today': self.get_orders_count(start_date=today, end_date=today + timedelta(days=1)),
+            'orders_this_week': self.get_orders_count(start_date=start_of_week, end_date=today + timedelta(days=1)),
+            'orders_this_month': self.get_orders_count(start_date=start_of_month, end_date=today + timedelta(days=1)),
+            'orders_this_year': self.get_orders_count(start_date=start_of_year, end_date=today + timedelta(days=1)),
+            'revenue_today': self.get_revenue(start_date=today, end_date=today + timedelta(days=1)),
+            'revenue_this_week': self.get_revenue(start_date=start_of_week, end_date=today + timedelta(days=1)),
+            'revenue_this_month': self.get_revenue(start_date=start_of_month, end_date=today + timedelta(days=1)),
+            'revenue_this_year': self.get_revenue(start_date=start_of_year, end_date=today + timedelta(days=1)),
+        }
 
 
 class ProductCategory(models.Model):
