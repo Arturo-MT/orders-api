@@ -6,14 +6,15 @@ from rest_framework.permissions import IsAuthenticated
 from .models import Order, OrderItem, Product, ProductCategory, Store
 from .serializers import OrderSerializer, OrderItemSerializer, ProductSerializer, ProductCategorySerializer, StoreSerializer
 from .utils.print_ticket import print_ticket
-from django.views.generic import TemplateView
-from django.utils.timezone import now
-from django.views import View
-from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
-from django.utils.decorators import method_decorator
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.shortcuts import render, redirect, get_object_or_404
+from django.utils import timezone
+from django.utils.decorators import method_decorator
+from django.views import View
+from django.views.generic import TemplateView
+from datetime import timedelta
 import json
 
 
@@ -37,27 +38,52 @@ class DashboardView(TemplateView):
         context = super().get_context_data(**kwargs)
         store = self.request.user.store
         orders = Order.objects.filter(store=store).order_by('-created_at')
-        context['orders'] = orders
-        context['total_orders'] = orders.count()
-        context['total_sales'] = sum(order.total for order in orders)
-        context['today_sales'] = sum(
-            order.total for order in orders.filter(created_at__date=now().date()))
-        context['today_orders'] = orders.filter(
-            created_at__date=now().date()).count()
+
+        today = timezone.localtime(timezone.now()).date()
+        start_of_week = today - timedelta(days=today.weekday())
+        start_of_month = today.replace(day=1)
+        start_of_year = today.replace(month=1, day=1)
+
+        orders_today = Order.objects.filter(
+            store=store, created_at__date=today)
+        orders_week = Order.objects.filter(
+            store=store, created_at__gte=start_of_week)
+        orders_month = Order.objects.filter(
+            store=store, created_at__gte=start_of_month)
+        orders_year = Order.objects.filter(
+            store=store, created_at__gte=start_of_year)
+
+        total_orders_today = orders_today.count()
+        total_orders_week = orders_week.count()
+        total_orders_month = orders_month.count()
+        total_orders_year = orders_year.count()
+
+        total_revenue_today = sum(order.total for order in orders_today)
+        total_revenue_week = sum(order.total for order in orders_week)
+        total_revenue_month = sum(order.total for order in orders_month)
+        total_revenue_year = sum(order.total for order in orders_year)
+
+        context.update({
+            'total_orders_today': total_orders_today,
+            'total_orders_week': total_orders_week,
+            'total_orders_month': total_orders_month,
+            'total_orders_year': total_orders_year,
+            'total_revenue_today': total_revenue_today,
+            'total_revenue_week': total_revenue_week,
+            'total_revenue_month': total_revenue_month,
+            'total_revenue_year': total_revenue_year,
+            'orders': orders,
+        })
+
         return context
 
 
-class PrintTicketView(APIView):
-    permission_classes = [IsAuthenticated]
-
+class PrintTicketView(LoginRequiredMixin, View):
     def post(self, request, *args, **kwargs):
-        status_code, response_text = print_ticket(
-            order_id=request.data.get('order_id'))
-        if status_code == 200:
-            messages.success(request, "Ticket impreso exitosamente.")
-        else:
-            raise Exception(f"Error al imprimir ticket: {response_text}")
-        return redirect('home')
+        order_id = request.POST.get("order_id")
+        print_ticket(order_id=order_id, request=request)
+
+        return redirect(request.META.get("HTTP_REFERER", "home"))
 
 
 @method_decorator(login_required, name='dispatch')
@@ -246,5 +272,5 @@ class CreateOrderView(APIView):
                 order=order, product_id=product_id, quantity=quantity, description=description)
 
         serializer = OrderSerializer(order)
-        print_ticket(order_id=order.id)
+        print_ticket(order_id=order.id, request=request)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
