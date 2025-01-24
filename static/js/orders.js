@@ -81,6 +81,7 @@ function clearOrder() {
   if (!confirmation) {
     return
   }
+  document.getElementById('customer-name').value = ''
   const defaultType = document.getElementById('for-here')
   defaultType.checked = true
   order = {
