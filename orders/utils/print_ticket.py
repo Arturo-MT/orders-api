@@ -93,10 +93,10 @@ def print_ticket(order_id, request):
             messages.success(
                 request, "El ticket de la orden se imprimió correctamente.")
         else:
-            messages.error(request, f"Error al imprimir el ticket: {
-                           response.text}")
+            messages.error(
+                request, f"Error al imprimir el ticket: {response.text}")
     except requests.ConnectionError:
         messages.error(
             request, "No se pudo conectar al servicio de impresión.")
 
-    return redirect("home")
+    return redirect(request.META.get("HTTP_REFERER", "home"))
