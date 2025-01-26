@@ -14,7 +14,7 @@ from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.generic import TemplateView
-from datetime import timedelta
+from datetime import timedelta, datetime
 import json
 
 
@@ -40,12 +40,13 @@ class DashboardView(TemplateView):
         orders = Order.objects.filter(store=store).order_by('-created_at')
 
         today = timezone.localtime(timezone.now()).date()
-        start_of_week = today - timedelta(days=today.weekday())
-        start_of_month = today.replace(day=1)
-        start_of_year = today.replace(month=1, day=1)
+        start_of_day = timezone.make_aware(datetime.combine(today, datetime.min.time()))
+        start_of_week = start_of_day - timedelta(days=start_of_day.weekday())
+        start_of_month = start_of_day.replace(day=1)
+        start_of_year = start_of_day.replace(month=1, day=1)
 
         orders_today = Order.objects.filter(
-            store=store, created_at__date=today)
+            store=store, created_at__date=start_of_day)
         orders_week = Order.objects.filter(
             store=store, created_at__gte=start_of_week)
         orders_month = Order.objects.filter(
@@ -180,7 +181,7 @@ class CreateOrderTemplateView(View):
             customer_name=customer_name,
             type=order_type,
             customer=request.user,
-            store=store
+            store=store,
         )
 
         for item in items:
