@@ -47,6 +47,12 @@ class CustomUser(AbstractUser):
     def __str__(self):
         return self.email
 
+class AccountSettings(models.Model):
+    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
+    addr = models.CharField()
+
+    def __str__(self):
+        return self.user.email
 
 @receiver(post_save, sender=CustomUser)
 def update_file_path(instance, created, **kwargs):

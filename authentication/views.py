@@ -1,12 +1,15 @@
-from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.hashers import make_password
 from django.contrib import messages
 from django.db import IntegrityError
+from django.shortcuts import render, redirect
+from django.views import View
+from requests import Response
 from rest_framework import status, generics
-from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
-from .serializers import UserSerializer
+from .models import AccountSettings
+from .serializers import UserSerializer, AccountSettingsSerializer
 from orders.models import Store
 
 
@@ -68,3 +71,28 @@ class RegisterView(generics.CreateAPIView):
                 messages.error(request, f"{field.capitalize()}: {error}")
 
         return redirect('auth_register')
+
+class SettingsTemplateView(View):
+    template_name = 'settings.html'
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request):
+        settings = AccountSettings.objects.filter(user=request.user)
+        return render(request, self.template_name, {'settings': settings})
+
+    def post(self, request):
+        try:
+            addr = request.POST.get("addr")
+            if not addr:
+                raise ValueError("La dirección IP es obligatoria.")
+            settings, created = AccountSettings.objects.get_or_create(
+                user=request.user,
+                defaults={'addr': addr}
+            )
+            if not created:
+                settings.addr = addr
+                settings.save()
+            messages.success(request, "La dirección IP se ha guardado correctamente.")
+        except Exception as e:
+            messages.error(request, f"Error al guardar la dirección IP: {e}")
+        return redirect("account_settings")
