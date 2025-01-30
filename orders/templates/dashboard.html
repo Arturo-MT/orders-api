@@ -5,25 +5,25 @@
     <div class="container mt-4 ps-0">
         <div class="row" style="max-width: 600px;">
             <div class="col-12">
-                <div class="d-flex justify-content-between mb-3">
-                    <div>
-                        <label for="time_interval" class="form-label">Selecciona Intervalo</label>
-                        <select id="time_interval" class="form-select" onchange="updateStats()">
-                            <option value="today">Hoy</option>
-                            <option value="week">Esta semana</option>
-                            <option value="month">Este mes</option>
-                            <option value="year">Este año</option>
+                <div class="filter-section mb-4">
+                    <form method="get">
+                        <select name="period" class="form-select" onchange="this.form.submit()">
+                            <option value="today" {% if selected_period == 'today' %}selected{% endif %}>Hoy</option>
+                            <option value="week" {% if selected_period == 'week' %}selected{% endif %}>Esta semana</option>
+                            <option value="month" {% if selected_period == 'month' %}selected{% endif %}>Este mes</option>
+                            <option value="year" {% if selected_period == 'year' %}selected{% endif %}>Este año</option>
+                            <option value="all" {% if selected_period == 'all' %}selected{% endif %}>Todas</option>
                         </select>
-                    </div>
+                    </form>
                 </div>
     
                 <div class="d-flex justify-content-between">
                     <div id="orders_stats" class="stat_category mb-3">
-                        <h4>Órdenes hoy: {{ total_orders_today }}</h4>
+                        <h4>Órdenes: {{ total_orders }}</h4>
                     </div>
         
                     <div id="revenue_stats" class="stat_category mb-3 ms-2">
-                        <h4>Ingresos hoy: ${{ total_revenue_today }}</h4>
+                        <h4>Ingresos: ${{ total_revenue}}</h4>
                     </div>
                 </div>
             </div>
@@ -43,7 +43,7 @@
                 </tr>
             </thead>
             <tbody>
-                {% for order in orders %}
+                {% for order in orders_page %}
                 <tr>
                     <td>{{ order.order_number }}</td>
                     <td>{{ order.created_at }}</td>
@@ -75,42 +75,25 @@
         </table>
     </div>
 
+    <div class="pagination">
+        <span class="step-links">
+            {% if orders_page.has_previous %}
+                <a href="?page=1&period={{ selected_period }}">&laquo; primera</a>
+                <a href="?page={{ orders_page.previous_page_number }}&period={{ selected_period }}">anterior</a>
+            {% endif %}
+
+            {% if orders_page.paginator.num_pages > 1 %}
+                <span class="current">
+                    Página {{ orders_page.number }} de {{ orders_page.paginator.num_pages }}.
+                </span>
+            {% endif %}
+
+            {% if orders_page.has_next %}
+                <a href="?page={{ orders_page.next_page_number }}&period={{ selected_period }}">siguiente</a>
+                <a href="?page={{ orders_page.paginator.num_pages }}&period={{ selected_period }}">última &raquo;</a>
+            {% endif %}
+        </span>
+    </div>
 </div>
-<script>
-    function updateStats() {
-        var timeInterval = document.getElementById("time_interval").value;
-        
-        var ordersToday = {{ total_orders_today }};
-        var ordersWeek = {{ total_orders_week }};
-        var ordersMonth = {{ total_orders_month }};
-        var ordersYear = {{ total_orders_year }};
-        
-        var revenueToday = {{ total_revenue_today }};
-        var revenueWeek = {{ total_revenue_week }};
-        var revenueMonth = {{ total_revenue_month }};
-        var revenueYear = {{ total_revenue_year }};
-
-        var ordersStats = document.getElementById("orders_stats");
-        var revenueStats = document.getElementById("revenue_stats");
-
-        if (timeInterval === "today") {
-            ordersStats.innerHTML = `<h4>Órdenes hoy: <b>${ordersToday}</b></h4>`;
-            revenueStats.innerHTML = `<h4>Ingresos hoy: <b>$${revenueToday}</b></h4>`;
-        } else if (timeInterval === "week") {
-            ordersStats.innerHTML = `<h4>Órdenes esta semana: <b>${ordersWeek}</b></h4>`;
-            revenueStats.innerHTML = `<h4>Ingresos esta semana: <b>$${revenueWeek}</b></h4>`;
-        } else if (timeInterval === "month") {
-            ordersStats.innerHTML = `<h4>Órdenes este mes: <b>${ordersMonth}</b></h4>`;
-            revenueStats.innerHTML = `<h4>Ingresos este mes: <b>$${revenueMonth}</b></h4>`;
-        } else if (timeInterval === "year") {
-            ordersStats.innerHTML = `<h4>Órdenes este año: <b>${ordersYear}</b></h4>`;
-            revenueStats.innerHTML = `<h4>Ingresos este año: <b>$${revenueYear}</b></h4>`;
-        }
-    }
-
-    window.onload = function() {
-        updateStats();
-    }
-</script>
 
 {% endblock %}

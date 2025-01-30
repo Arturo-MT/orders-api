@@ -1,4 +1,6 @@
 import requests
+
+from authentication.models import AccountSettings
 from orders.models import Order
 from django.contrib import messages
 from django.shortcuts import redirect
@@ -20,7 +22,11 @@ def print_ticket(order_id, request):
     order_items = order.orderitem_set.all()
     total = sum(item.price for item in order_items)
 
-    url = "http://192.168.50.144:8000/imprimir"
+    settings = AccountSettings.objects.get(user=request.user)
+
+    addr = settings.addr
+
+    url = f"http://{addr}:8000/imprimir"
     headers = {'Content-Type': 'application/json'}
     data = {
         "operaciones": [
@@ -93,10 +99,10 @@ def print_ticket(order_id, request):
             messages.success(
                 request, "El ticket de la orden se imprimió correctamente.")
         else:
-            messages.error(
-                request, f"Error al imprimir el ticket: {response.text}")
+            messages.error(request, f"Error al imprimir el ticket: {
+                           response.text}")
     except requests.ConnectionError:
         messages.error(
             request, "No se pudo conectar al servicio de impresión.")
 
-    return redirect(request.META.get("HTTP_REFERER", "home"))
+    return redirect("home")
