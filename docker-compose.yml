@@ -1,15 +1,30 @@
+version: '3.8'
+
 services:
   web:
     build: .
-    ports:
-      - "8000:8000"
     command: gunicorn --bind 0.0.0.0:8000 app.wsgi:application
     env_file:
       - .env
     volumes:
-      - .:/code
+      - static_volume:/app/staticfiles
+      - media_volume:/app/media
+    expose:
+      - "8000"
     depends_on:
       - db
+
+  nginx:
+    image: nginx:1.25
+    ports:
+      - "80:80"
+    volumes:
+      - ./app/nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+      - static_volume:/app/staticfiles
+      - media_volume:/app/media
+    depends_on:
+      - web
+
   db:
     image: postgres:17.0
     env_file:
@@ -19,3 +34,5 @@ services:
 
 volumes:
   postgres_data:
+  static_volume:
+  media_volume:
