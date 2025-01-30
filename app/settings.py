@@ -35,7 +35,8 @@ SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
 DEBUG = os.getenv('DJANGO_DEBUG')
 
 ALLOWED_HOSTS = [
-    '35.192.22.205'
+    '35.192.22.205',
+    'www.tacolocofood.com'
 ]
 
 # Redirect to home URL after login
