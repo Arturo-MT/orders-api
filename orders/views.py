@@ -7,11 +7,10 @@ from .models import Order, OrderItem, Product, ProductCategory, Store
 from .serializers import OrderSerializer, OrderItemSerializer, ProductSerializer, ProductCategorySerializer, StoreSerializer
 from .utils.print_ticket import print_ticket
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
-from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.generic import TemplateView
 from datetime import timedelta, datetime
@@ -31,19 +30,27 @@ class HomePageView(LoginRequiredMixin, TemplateView):
         return context
 
 
-class DashboardView(TemplateView):
+class DashboardView(LoginRequiredMixin, TemplateView):
     template_name = 'dashboard.html'
+    login_url = 'auth_login'
+    paginate_by = 15
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         store = self.request.user.store
-        orders = Order.objects.filter(store=store).order_by('-created_at')
+
+        selected_period = self.request.GET.get('period', 'today')
+
 
         today = timezone.localtime(timezone.now()).date()
         start_of_day = timezone.make_aware(datetime.combine(today, datetime.min.time()))
         start_of_week = start_of_day - timedelta(days=start_of_day.weekday())
         start_of_month = start_of_day.replace(day=1)
         start_of_year = start_of_day.replace(month=1, day=1)
+
+        orders = Order.objects.filter(store=store).order_by('-created_at')
+        total_orders = orders.count()
+        total_revenue = sum(order.total for order in orders)
 
         orders_today = Order.objects.filter(
             store=store, created_at__date=start_of_day)
@@ -64,16 +71,38 @@ class DashboardView(TemplateView):
         total_revenue_month = sum(order.total for order in orders_month)
         total_revenue_year = sum(order.total for order in orders_year)
 
+        if selected_period == 'today':
+            orders = orders.filter(created_at__date=start_of_day)
+            total_orders = total_orders_today
+            total_revenue = total_revenue_today
+        elif selected_period == 'week':
+            orders = orders.filter(created_at__gte=start_of_week)
+            total_orders = total_orders_week
+            total_revenue = total_revenue_week
+        elif selected_period == 'month':
+            orders = orders.filter(created_at__gte=start_of_month)
+            total_orders = total_orders_month
+            total_revenue = total_revenue_month
+        elif selected_period == 'year':
+            orders = orders.filter(created_at__gte=start_of_year)
+            total_orders = total_orders_year
+            total_revenue = total_revenue_year
+
+        page = self.request.GET.get('page')
+        paginator = Paginator(orders, self.paginate_by)
+
+        try:
+            orders_page = paginator.page(page)
+        except PageNotAnInteger:
+            orders_page = paginator.page(1)
+        except EmptyPage:
+            orders_page = paginator.page(paginator.num_pages)
+
         context.update({
-            'total_orders_today': total_orders_today,
-            'total_orders_week': total_orders_week,
-            'total_orders_month': total_orders_month,
-            'total_orders_year': total_orders_year,
-            'total_revenue_today': total_revenue_today,
-            'total_revenue_week': total_revenue_week,
-            'total_revenue_month': total_revenue_month,
-            'total_revenue_year': total_revenue_year,
-            'orders': orders,
+            'total_orders': total_orders,
+            'total_revenue': total_revenue,
+            'orders_page': orders_page,
+            'selected_period': selected_period,
         })
 
         return context
@@ -87,9 +116,9 @@ class PrintTicketView(LoginRequiredMixin, View):
         return redirect(request.META.get("HTTP_REFERER", "home"))
 
 
-@method_decorator(login_required, name='dispatch')
-class CategoryTemplateView(View):
+class CategoryTemplateView(LoginRequiredMixin, View):
     template_name = "categories.html"
+    login_url = 'auth_login'
 
     def get(self, request):
         categories = ProductCategory.objects.all()
@@ -114,9 +143,9 @@ class CategoryTemplateView(View):
         return redirect("category_template_view")
 
 
-@method_decorator(login_required, name='dispatch')
-class ProductTemplateView(View):
+class ProductTemplateView(LoginRequiredMixin, View):
     template_name = "products.html"
+    login_url = 'auth_login'
 
     def get(self, request):
         products = Product.objects.all()
@@ -199,8 +228,6 @@ class CreateOrderTemplateView(View):
                 quantity=quantity,
                 description=description
             )
-
-        serializer = OrderSerializer(order)
 
         print_ticket(order_id=order.id, request=request)
 
