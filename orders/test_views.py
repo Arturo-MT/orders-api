@@ -13,22 +13,45 @@ class ProductCategoryViewSetTests(TestCase):
         self.client = APIClient()
         self.category = ProductCategory.objects.create(name='Drinks')
         self.url = reverse('productcategory-list')
+        self.user_model = get_user_model()
+        self.superuser = self.user_model.objects.create_superuser(
+            email='superuser1@example.com',
+            username='superuser1',
+            first_name='John',
+            last_name='Doe',
+            phone_number='1234467899',
+            password='superuserpassword',
+        )
 
     def test_create_product_category(self):
+        self.client.force_authenticate(user=self.superuser)
         data = {'name': 'Food'}
         response = self.client.post(self.url, data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(ProductCategory.objects.count(), 2)
-        self.assertEqual(ProductCategory.objects.get(id=response.data['id']).name, 'Food')
+        self.assertEqual(ProductCategory.objects.get(
+            id=response.data['id']).name, 'Food')
+
 
 class ProductViewSetTests(TestCase):
     def setUp(self):
         self.client = APIClient()
         self.category = ProductCategory.objects.create(name='Drinks')
-        self.product = Product.objects.create(name='Soda', category=self.category, price=10.00)
+        self.product = Product.objects.create(
+            name='Soda', category=self.category, price=10.00)
         self.url = reverse('product-list')
+        self.user_model = get_user_model()
+        self.superuser = self.user_model.objects.create_superuser(
+            email='superuser1@example.com',
+            username='superuser1',
+            first_name='John',
+            last_name='Doe',
+            phone_number='1234467899',
+            password='superuserpassword',
+        )
 
     def test_get_products(self):
+        self.client.force_authenticate(user=self.superuser)
         response = self.client.get(self.url)
         products = Product.objects.all()
         serializer = ProductSerializer(products, many=True)
@@ -36,6 +59,7 @@ class ProductViewSetTests(TestCase):
         self.assertEqual(response.data, serializer.data)
 
     def test_create_product(self):
+        self.client.force_authenticate(user=self.superuser)
         data = {
             'name': 'Soda',
             'category': self.category.id,
@@ -45,7 +69,9 @@ class ProductViewSetTests(TestCase):
         response = self.client.post(self.url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(Product.objects.count(), 2)
-        self.assertEqual(Product.objects.get(id=response.data['id']).name, 'Soda')
+        self.assertEqual(Product.objects.get(
+            id=response.data['id']).name, 'Soda')
+
 
 class OrderViewTestCase(APITestCase):
     def setUp(self):
@@ -72,11 +98,11 @@ class OrderViewTestCase(APITestCase):
             description='This is a test product 2',
             category=self.category
         )
-    
+
     def test_create_order(self):
         self.client.force_authenticate(user=self.superuser)
         response = self.client.post(
-            reverse('create-order'),
+            reverse('create_order'),
             {
                 'customer': self.superuser.id,
                 'items': [
@@ -89,7 +115,7 @@ class OrderViewTestCase(APITestCase):
                         'quantity': 1
                     }
                 ],
-                'type': 'T' # To go
+                'type': 'T'  # To go
             },
             format='json'
         )

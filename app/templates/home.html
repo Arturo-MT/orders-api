@@ -1,22 +1,79 @@
-{% extends "base.html" %} {% block title %}Inicio - Orders API{% endblock %}
-{%block content %}
+{% extends "base.html" %} {% load static %} {% block title %}Inicio - OrdersAPI
+{% endblock %} {%block content %}
 <h1>Productos</h1>
 <div class="row">
-  {% for product in products %}
-  <div class="col-md-4">
-    <div class="card mb-4">
-      <img
-        src="{{ product.preview.url }}"
-        class="card-img-top"
-        alt="{{ product.name }}"
-      />
-      <div class="card-body">
-        <h5 class="card-title">{{ product.name }}</h5>
-        <p class="card-text">{{ product.description }}</p>
-        <p class="card-text"><strong>Precio:</strong> ${{ product.price }}</p>
+  <div class="col-md-6">
+    <!-- Filter by category -->
+    <div class="form-group mt-3">
+      <label for="categoryFilter">Filtrar por Categoría</label>
+      <select class="form-control" id="categoryFilter" onchange="filterByCategory(this.value)">
+        <option value="">Todas</option>
+        {% for category in categories %}
+        <option value="{{ category.id }}">{{ category.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- Grid of products -->
+    <div class="row mt-4" id="productsGrid" style="max-height: 400px; overflow-y: auto;">
+      {% for product in products %}
+      <div class="col-md-4" data-category="{{ product.category.id }}">
+        <div class="card mb-4">
+          <div class="card-body">
+            <h5 class="card-title">{{ product.name }}</h5>
+            <p class="card-text">
+              <strong>Precio:</strong> ${{ product.price }}
+            </p>
+            <button class="btn btn-primary" onclick="addToOrder({{product.id}}, '{{product.name}}')">
+              Agregar
+            </button>
+          </div>
+        </div>
       </div>
+      {% endfor %}
     </div>
   </div>
-  {% endfor %}
-</div>
-{% endblock %}
+
+  <div class="col-md-6">
+    <h2>Orden</h2>
+    <form method="post" action="{% url 'create_order' %}">
+      {% csrf_token %}
+      <div class="flex-column">
+        <div class="mb-2">
+          <input type="text" id="customer-name" name="customer_name" class="form-control" placeholder="Nombre del cliente" required
+            onchange="updateCustomerName(this.value)" />
+        </div>
+        <div class="d-flex mb-3 justify-content-between">
+          <div class="d-flex align-items-center">
+            <div class="me-3">
+              <input type="radio" id="for-here" name="order-type" value="F" checked
+                onchange="updateOrderType(this.value)" />
+              <label for="for-here">Para aquí</label>
+            </div>
+            <div>
+              <input type="radio" id="to-go" name="order-type" value="T" onchange="updateOrderType(this.value)" />
+              <label for="to-go">Para llevar</label>
+            </div>
+          </div>
+
+          <div class="">
+            <input type="hidden" name="store" value="{{ user.store.id }}" />
+            <input type="hidden" name="order_data" id="order-json-input" />
+            <button type="button" class="btn btn-danger me-1" onclick="clearOrder()">
+              Limpiar
+            </button>
+            <button type="submit" class="btn btn-primary" id="generate-order-button" disabled>
+              Generar orden
+            </button>
+          </div>
+        </div>
+      </div>
+    </form>
+    <div style="max-height: 390px; overflow-y: auto;">
+      <ul id="order-items"></ul>
+    </div>
+  </div>
+  <pre class="d-none" id="order-json"></pre>
+  {% endblock %} {% block extra_js %}
+  <script src="{% static 'js/orders.js' %}"></script>
+  {% endblock %}
