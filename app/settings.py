@@ -36,8 +36,13 @@ DEBUG = os.getenv('DJANGO_DEBUG')
 
 ALLOWED_HOSTS = [
     '35.192.22.205',
-    'www.tacolocofood.com'
+    'tacolocofood.com',
+    'www.tacolocofood.com',
 ]
+
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
 
 # Redirect to home URL after login
 LOGIN_REDIRECT_URL = '/'
