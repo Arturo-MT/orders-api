@@ -34,7 +34,9 @@ SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DJANGO_DEBUG')
 
-ALLOWED_HOSTS = str(os.getenv('ALLOWED_HOSTS')).split(',')
+ALLOWED_HOSTS = [
+    '35.192.22.205'
+]
 
 # Redirect to home URL after login
 LOGIN_REDIRECT_URL = '/'
