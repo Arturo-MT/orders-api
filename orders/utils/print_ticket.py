@@ -7,18 +7,18 @@ from django.shortcuts import redirect
 
 
 def print_ticket(order_id, request):
+    print("Printing ticket")
     try:
         order = Order.objects.get(id=order_id)
     except Order.DoesNotExist:
         messages.error(request, "Orden no encontrada.")
         return redirect("home")
-
+    print("Order details")
     order_types = {
         "T": "Para llevar",
         "F": "Para comer aquí",
     }
 
-    # Calcular el total sumando los totales de cada order_item
     order_items = order.orderitem_set.all()
     total = sum(item.price for item in order_items)
 
@@ -94,7 +94,9 @@ def print_ticket(order_id, request):
         {"nombre": "Pulso", "argumentos": [48, 60, 120]})
 
     try:
+        print("Sending ticket")
         response = requests.post(url, json=data, headers=headers)
+        print("Status code: ", response.status_code)
         if response.status_code == 200:
             messages.success(
                 request, "El ticket de la orden se imprimió correctamente.")
