@@ -33,6 +33,7 @@ services:
       - ./data/certbot/www:/var/www/certbot
     depends_on:
       - nginx
+    command: certonly --webroot --webroot-path=/var/www/html --email ingatorrez@gmail.com --agree-tos --no-eff-email -d tacolocofood.com -d www.tacolocofood.com --dry-run
 
   db:
     image: postgres:17.0
