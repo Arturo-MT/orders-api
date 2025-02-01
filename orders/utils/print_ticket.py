@@ -1,3 +1,4 @@
+import requests
 from requests.exceptions import Timeout, ConnectionError, RequestException
 from authentication.models import AccountSettings
 from orders.models import Order
