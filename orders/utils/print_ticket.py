@@ -1,6 +1,4 @@
-import requests
-from requests import RequestException
-
+from requests.exceptions import Timeout, ConnectionError, RequestException
 from authentication.models import AccountSettings
 from orders.models import Order
 from django.contrib import messages
@@ -22,7 +20,11 @@ def print_ticket(order_id, request):
     order_items = order.orderitem_set.all()
     total = sum(item.price for item in order_items)
 
-    url = "https://localhost:8000/imprimir"
+    settings = AccountSettings.objects.get(user=request.user)
+
+    addr = settings.addr
+
+    url = f"http://{addr}:8000/imprimir"
     headers = {'Content-Type': 'application/json'}
     data = {
         "operaciones": [
@@ -93,7 +95,7 @@ def print_ticket(order_id, request):
         response = requests.post(url, json=data, headers=headers, timeout=10)
         response.raise_for_status()
         messages.success(request, "El ticket de la orden se imprimió correctamente.")
-    except TimeoutError:
+    except Timeout:
         messages.error(request, "El servidor de impresión no respondió a tiempo.")
     except ConnectionError:
         messages.error(request, "No se pudo conectar al servidor de impresión.")
