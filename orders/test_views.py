@@ -51,6 +51,7 @@ class ProductViewSetTests(TestCase):
             last_name='Doe',
             phone_number='1234467899',
             password='superuserpassword',
+            store=cls.store,
         )
 
     def setUp(self):

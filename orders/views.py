@@ -240,6 +240,7 @@ class CreateOrderTemplateView(View):
 
 
 class ProductCategoryViewSet(viewsets.ModelViewSet):
+    queryset = ProductCategory.objects.all()
     serializer_class = ProductCategorySerializer
     permission_classes = [IsAuthenticated]
 
@@ -248,6 +249,7 @@ class ProductCategoryViewSet(viewsets.ModelViewSet):
 
 
 class ProductViewSet(viewsets.ModelViewSet):
+    queryset = Product.objects.all()
     serializer_class = ProductSerializer
     permission_classes = [IsAuthenticated]
 
@@ -256,6 +258,7 @@ class ProductViewSet(viewsets.ModelViewSet):
 
 
 class OrderItemViewSet(viewsets.ModelViewSet):
+    queryset = OrderItem.objects.all()
     serializer_class = OrderItemSerializer
     permission_classes = [IsAuthenticated]
 
@@ -264,6 +267,7 @@ class OrderItemViewSet(viewsets.ModelViewSet):
 
 
 class OrderViewSet(viewsets.ModelViewSet):
+    queryset = Order.objects.all()
     serializer_class = OrderSerializer
     permission_classes = [IsAuthenticated]
 
@@ -272,6 +276,7 @@ class OrderViewSet(viewsets.ModelViewSet):
 
 
 class StoreViewSet(viewsets.ModelViewSet):
+    queryset = Store.objects.all()
     serializer_class = StoreSerializer
     permission_classes = [IsAdminUser]
 
