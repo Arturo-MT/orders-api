@@ -1,5 +1,5 @@
 import requests
-
+from requests.exceptions import Timeout, ConnectionError, RequestException
 from authentication.models import AccountSettings
 from orders.models import Order
 from django.contrib import messages
@@ -18,7 +18,6 @@ def print_ticket(order_id, request):
         "F": "Para comer aquí",
     }
 
-    # Calcular el total sumando los totales de cada order_item
     order_items = order.orderitem_set.all()
     total = sum(item.price for item in order_items)
 
@@ -94,15 +93,14 @@ def print_ticket(order_id, request):
         {"nombre": "Pulso", "argumentos": [48, 60, 120]})
 
     try:
-        response = requests.post(url, json=data, headers=headers)
-        if response.status_code == 200:
-            messages.success(
-                request, "El ticket de la orden se imprimió correctamente.")
-        else:
-            messages.error(request, f"Error al imprimir el ticket: {
-                           response.text}")
-    except requests.ConnectionError:
-        messages.error(
-            request, "No se pudo conectar al servicio de impresión.")
+        response = requests.post(url, json=data, headers=headers, timeout=10)
+        response.raise_for_status()
+        messages.success(request, "El ticket de la orden se imprimió correctamente.")
+    except Timeout:
+        messages.error(request, "El servidor de impresión no respondió a tiempo.")
+    except ConnectionError:
+        messages.error(request, "No se pudo conectar al servidor de impresión.")
+    except RequestException as e:
+        messages.error(request, f"Error al imprimir el ticket: {str(e)}")
 
     return redirect("home")

@@ -2,7 +2,7 @@ from rest_framework import viewsets
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from .models import Order, OrderItem, Product, ProductCategory, Store
 from .serializers import OrderSerializer, OrderItemSerializer, ProductSerializer, ProductCategorySerializer, StoreSerializer
 from .utils.print_ticket import print_ticket
@@ -242,63 +242,82 @@ class CreateOrderTemplateView(View):
 class ProductCategoryViewSet(viewsets.ModelViewSet):
     queryset = ProductCategory.objects.all()
     serializer_class = ProductCategorySerializer
-    # ToDo: Add permission classes when open to public so only admin can create categories
     permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return ProductCategory.objects.filter(store=self.request.user.store)
 
 
 class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
-    # ToDo: Add permission classes when open to public so only admin can create products
     permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Product.objects.filter(store=self.request.user.store)
 
 
 class OrderItemViewSet(viewsets.ModelViewSet):
     queryset = OrderItem.objects.all()
     serializer_class = OrderItemSerializer
-    # ToDo: Add permission classes when open to public so pubic can create order_items
     permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return OrderItem.objects.filter(order__store=self.request.user.store)
 
 
 class OrderViewSet(viewsets.ModelViewSet):
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
-    # ToDo: Add permission classes when open to public so public can create orders
     permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Order.objects.filter(store=self.request.user.store)
 
 
 class StoreViewSet(viewsets.ModelViewSet):
     queryset = Store.objects.all()
     serializer_class = StoreSerializer
-    # ToDo: Add permission classes when open to public so store can be created
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAdminUser]
+
+    def get_queryset(self):
+        return Store.objects.all()
 
 
 class CreateOrderView(APIView):
-    # ToDo: Add permission classes when open to public so public can create orders
     permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
-        order_data = request.POST.get('order_data')
-        data = json.loads(order_data)
+        data = request.data
         customer_name = data.get('customer_name')
         items = data.get('items', [])
         order_type = data.get('type')
-        customer = request.user
-        store_id = request.POST.get('store')
 
-        store = Store.objects.get(id=store_id)
+        if not customer_name or not order_type or not items:
+            return Response({"error": "Faltan datos obligatorios"}, status=status.HTTP_400_BAD_REQUEST)
+
+        store = get_object_or_404(Store, id=request.data.get('store'))
 
         order = Order.objects.create(
-            customer_name=customer_name, type=order_type, customer=customer, store=store)
+            customer_name=customer_name,
+            type=order_type,
+            customer=request.user,
+            store=store,
+        )
 
         for item in items:
             product_id = item.get('product')
             quantity = item.get('quantity')
             description = item.get('description')
-            OrderItem.objects.create(
-                order=order, product_id=product_id, quantity=quantity, description=description)
 
-        serializer = OrderSerializer(order)
-        print_ticket(order_id=order.id, request=request)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+            if not product_id or not quantity:
+                return Response({"error": "Datos de producto incompletos"}, status=status.HTTP_400_BAD_REQUEST)
+
+            OrderItem.objects.create(
+                order=order,
+                product_id=product_id,
+                quantity=quantity,
+                description=description
+            )
+
+        return Response(OrderSerializer(order).data, status=status.HTTP_201_CREATED)

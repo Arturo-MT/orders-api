@@ -1,0 +1,12 @@
+services:
+  web:
+    env_file:
+      - .env.dev
+    environment:
+      - DJANGO_ENV=development
+      - DJANGO_SETTINGS_MODULE=app.settings.dev
+    command: python manage.py runserver 0.0.0.0:8000
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/code

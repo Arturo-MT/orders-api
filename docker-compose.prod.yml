@@ -1,0 +1,22 @@
+services:
+  web:
+    env_file:
+      - .env.prod
+    environment:
+      - DJANGO_ENV=production
+      - DJANGO_SETTINGS_MODULE=app.settings.prod
+    command: gunicorn --workers 3 --timeout 120 --bind 0.0.0.0:8000 app.wsgi:application
+    ports:
+      - "8000:8000"
+
+  nginx:
+    image: nginx:1.25
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+      - static_volume:/code/staticfiles
+      - media_volume:/code/media
+    depends_on:
+      - web
