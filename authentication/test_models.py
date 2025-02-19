@@ -12,7 +12,7 @@ class CustomUserModelTest(TestCase):
         cls.user_model = get_user_model()
 
         cls.user, created = cls.user_model.objects.get_or_create(
-            email='testuser@example.com',
+            email='testuser1@example.com',
             defaults={
                 "password": "password123",
                 "first_name": "Test",
@@ -28,7 +28,7 @@ class CustomUserModelTest(TestCase):
             cls.user.save()
 
     def test_user_creation(self):
-        self.assertEqual(self.user.email, 'testuser@example.com')
+        self.assertEqual(self.user.email, 'testuser1@example.com')
         self.assertEqual(self.user.first_name, 'Test')
         self.assertEqual(self.user.last_name, 'User')
         self.assertEqual(self.user.username, 'testuser')
@@ -36,38 +36,38 @@ class CustomUserModelTest(TestCase):
         self.assertTrue(self.user.check_password('password123'))
 
     def test_user_str(self):
-        self.assertEqual(str(self.user), 'testuser@example.com')
+        self.assertEqual(str(self.user), 'testuser1@example.com')
 
     def test_email_unique(self):
         with self.assertRaises(IntegrityError):
             self.user_model.objects.create(
-                email='testuser@example.com',
+                email='testuser1@example.com',
                 password='password123',
                 first_name='Test2',
                 last_name='User2',
-                username='testuser2',
+                username='testuser1',
                 phone_number='0987654321'
             )
 
     def test_username_unique(self):
         with self.assertRaises(IntegrityError):
             self.user_model.objects.create(
-                email='testuser2@example.com',
+                email='testuser3@example.com',
                 password='password123',
                 first_name='Test2',
                 last_name='User2',
                 username='testuser',
-                phone_number='0987654321'
+                phone_number='0987654221'
             )
 
     def test_phone_number_unique(self):
         with self.assertRaises(IntegrityError):
             self.user_model.objects.create(
-                email='testuser2@example.com',
+                email='testuser4@example.com',
                 password='password123',
                 first_name='Test2',
                 last_name='User2',
-                username='testuser2',
+                username='testuser3',
                 phone_number='1234567890'
             )
 

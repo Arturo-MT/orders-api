@@ -12,17 +12,20 @@ class OrderModelTest(TestCase):
         cls.user_model = get_user_model()
         cls.store = Store.objects.create(name="Test Store")
 
-        cls.user, _ = cls.user_model.objects.get_or_create(
-            email='testuser@example.com',
+        cls.user, created = cls.user_model.objects.get_or_create(
+            email='testuser11@example.com',
             defaults={
                 "password": "password123",
                 "first_name": "Test",
                 "last_name": "User",
-                "username": "testuser",
+                "username": "testuser11",
                 "phone_number": "1234567890",
                 "store": cls.store,
             }
         )
+        if created:
+            cls.user.set_password("password123")
+            cls.user.save()
 
         cls.category = ProductCategory.objects.create(name='Test Category', store=cls.store)
 
@@ -63,4 +66,5 @@ class OrderModelTest(TestCase):
         self.assertEqual(str(self.order_item), f'2x {self.product.name}')
 
     def test_product_path(self):
-        self.assertEqual(self.product.preview.path, f'/code/app/media/previews/{self.product.id}/preview.jpg')
+        expected_path = f'/code/app/media/previews/{self.product.id}/preview.jpg'
+        self.assertEqual(self.product.preview.path, expected_path)

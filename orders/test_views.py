@@ -3,7 +3,7 @@ from django.urls import reverse
 from django.contrib.auth import get_user_model
 from rest_framework.test import APITestCase, APIClient
 from rest_framework import status
-from .models import Product, ProductCategory, Order, Store
+from .models import Product, ProductCategory, Store
 from .serializers import ProductSerializer, ProductCategorySerializer
 
 User = get_user_model()
@@ -15,14 +15,21 @@ class ProductCategoryViewSetTests(TestCase):
         cls.store = Store.objects.create(name='Test Store')
         cls.category = ProductCategory.objects.create(name='Drinks', store=cls.store)
         cls.url = reverse('productcategory-list')
-        cls.superuser = User.objects.create_superuser(
-            email='superuser1@example.com',
-            username='superuser1',
-            first_name='John',
-            last_name='Doe',
-            phone_number='1234467899',
-            password='superuserpassword',
+        cls.superuser, created = User.objects.get_or_create(
+            email='superuser11@example.com',
+            defaults={
+                "username": "superuser1",
+                "first_name": "John",
+                "last_name": "Doe",
+                "phone_number": "1234467899",
+                "password": "superuserpassword",
+                "is_superuser": True,
+                "is_staff": True,
+            }
         )
+        if created:
+            cls.superuser.set_password("superuserpassword")
+            cls.superuser.save()
 
     def setUp(self):
         self.client = APIClient()
@@ -44,15 +51,22 @@ class ProductViewSetTests(TestCase):
         cls.category = ProductCategory.objects.create(name='Drinks', store=cls.store)
         cls.product = Product.objects.create(name='Soda', category=cls.category, price=10.00, store=cls.store)
         cls.url = reverse('product-list')
-        cls.superuser = User.objects.create_superuser(
-            email='superuser1@example.com',
-            username='superuser1',
-            first_name='John',
-            last_name='Doe',
-            phone_number='1234467899',
-            password='superuserpassword',
-            store=cls.store,
+        cls.superuser, created = User.objects.get_or_create(
+            email='superuser12@example.com',
+            defaults={
+                "username": "superuser2",
+                "first_name": "John",
+                "last_name": "Doe",
+                "phone_number": "1234467899",
+                "password": "superuserpassword",
+                "is_superuser": True,
+                "is_staff": True,
+                "store": cls.store,
+            }
         )
+        if created:
+            cls.superuser.set_password("superuserpassword")
+            cls.superuser.save()
 
     def setUp(self):
         self.client = APIClient()
@@ -86,14 +100,22 @@ class OrderViewTestCase(APITestCase):
         Product.objects.all().delete()
         cls.store = Store.objects.create(name='Test Store')
         cls.category = ProductCategory.objects.create(name='Test Category', store=cls.store)
-        cls.superuser = User.objects.create_superuser(
-            email='superuser1@example.com',
-            username='superuser1',
-            first_name='John',
-            last_name='Doe',
-            phone_number='1234467899',
-            password='superuserpassword',
+        cls.superuser, created = User.objects.get_or_create(
+            email='superuser13@example.com',
+            defaults={
+                "username": "superuser3",
+                "first_name": "John",
+                "last_name": "Doe",
+                "phone_number": "1234467899",
+                "password": "superuserpassword",
+                "is_superuser": True,
+                "is_staff": True,
+            }
         )
+        if created:
+            cls.superuser.set_password("superuserpassword")
+            cls.superuser.save()
+
         cls.product1 = Product.objects.create(
             name='Test Product 1',
             price=10.99,
@@ -101,6 +123,7 @@ class OrderViewTestCase(APITestCase):
             category=cls.category,
             store=cls.store,
         )
+
         cls.product2 = Product.objects.create(
             name='Test Product 2',
             price=10.99,
