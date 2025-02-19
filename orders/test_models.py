@@ -1,38 +1,45 @@
 from django.test import TestCase
 from django.contrib.auth import get_user_model
 from django.utils.timezone import now
-from .models import Product, Order, OrderItem, ProductCategory
+from .models import Product, Order, OrderItem, ProductCategory, Store
 from django.core.files.uploadedfile import SimpleUploadedFile
+
 
 class OrderModelTest(TestCase):
 
-    def setUp(self):
-        self.user_model = get_user_model()
-        self.user = self.user_model.objects.create_user(
+    @classmethod
+    def setUpTestData(cls):
+        cls.user_model = get_user_model()
+        cls.store = Store.objects.create(name="Test Store")
+
+        cls.user, _ = cls.user_model.objects.get_or_create(
             email='testuser@example.com',
-            password='password123',
-            first_name='Test',
-            last_name='User',
-            username='testuser',
-            phone_number='1234567890'
+            defaults={
+                "password": "password123",
+                "first_name": "Test",
+                "last_name": "User",
+                "username": "testuser",
+                "phone_number": "1234567890",
+                "store": cls.store,
+            }
         )
-        self.category = ProductCategory.objects.create(
-            name='Test Category'
-        )
-        self.product = Product.objects.create(
+
+        cls.category = ProductCategory.objects.create(name='Test Category', store=cls.store)
+
+        cls.product = Product.objects.create(
             name='Test Product',
             description='Test Description',
             price=10.00,
-            category=self.category,
-            preview=SimpleUploadedFile('test.jpg', b'file_content', content_type='image/jpeg')
+            category=cls.category,
+            preview=SimpleUploadedFile('test.jpg', b'file_content', content_type='image/jpeg'),
+            store=cls.store,
         )
-        self.order = Order.objects.create(
-            type='T',
-            customer=self.user
-        )
-        self.order_item = OrderItem.objects.create(
-            order=self.order,
-            product=self.product,
+
+        cls.order = Order.objects.create(type='T', customer=cls.user, store=cls.store)
+
+        cls.order_item = OrderItem.objects.create(
+            order=cls.order,
+            product=cls.product,
             quantity=2
         )
 
@@ -54,6 +61,6 @@ class OrderModelTest(TestCase):
 
     def test_order_item_str(self):
         self.assertEqual(str(self.order_item), f'2x {self.product.name}')
-    
+
     def test_product_path(self):
-        self.assertEqual(self.product.preview.path, f'/code/media/previews/{self.product.id}/preview.jpg')
+        self.assertEqual(self.product.preview.path, f'/code/app/media/previews/{self.product.id}/preview.jpg')
