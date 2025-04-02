@@ -41,9 +41,9 @@ class DashboardView(LoginRequiredMixin, TemplateView):
 
         selected_period = self.request.GET.get('period', 'today')
 
-
         today = timezone.localtime(timezone.now()).date()
-        start_of_day = timezone.make_aware(datetime.combine(today, datetime.min.time()))
+        start_of_day = timezone.make_aware(
+            datetime.combine(today, datetime.min.time()))
         start_of_week = start_of_day - timedelta(days=start_of_day.weekday())
         start_of_month = start_of_day.replace(day=1)
         start_of_year = start_of_day.replace(month=1, day=1)
@@ -217,6 +217,7 @@ class CreateOrderTemplateView(View):
             product_id = item.get('product')
             quantity = item.get('quantity')
             description = item.get('description')
+            price = item.get('price')
 
             if not product_id or not quantity:
                 messages.error(request, "Faltan datos de producto o cantidad.")
@@ -226,6 +227,7 @@ class CreateOrderTemplateView(View):
                 order=order,
                 product_id=product_id,
                 quantity=quantity,
+                price=price,
                 description=description
             )
 
@@ -309,6 +311,7 @@ class CreateOrderView(APIView):
             product_id = item.get('product')
             quantity = item.get('quantity')
             description = item.get('description')
+            price = item.get('price')
 
             if not product_id or not quantity:
                 return Response({"error": "Datos de producto incompletos"}, status=status.HTTP_400_BAD_REQUEST)
@@ -317,6 +320,7 @@ class CreateOrderView(APIView):
                 order=order,
                 product_id=product_id,
                 quantity=quantity,
+                price=price,
                 description=description
             )
 
