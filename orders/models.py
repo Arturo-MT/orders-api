@@ -110,10 +110,6 @@ class OrderItem(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    def save(self, *args, **kwargs):
-        self.price = self.product.price * self.quantity
-        super().save(*args, **kwargs)
-
     def __str__(self):
         return f'{self.quantity}x {self.product.name}'
 

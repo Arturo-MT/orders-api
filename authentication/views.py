@@ -4,12 +4,12 @@ from django.contrib import messages
 from django.db import IntegrityError
 from django.shortcuts import render, redirect
 from django.views import View
-from requests import Response
 from rest_framework import status, generics
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
+from rest_framework.response import Response
 from .models import AccountSettings
-from .serializers import UserSerializer, AccountSettingsSerializer
+from .serializers import UserSerializer
 from orders.models import Store
 
 
@@ -72,6 +72,7 @@ class RegisterView(generics.CreateAPIView):
 
         return redirect('auth_register')
 
+
 class SettingsTemplateView(View):
     template_name = 'settings.html'
     permission_classes = (IsAuthenticated,)
@@ -92,7 +93,17 @@ class SettingsTemplateView(View):
             if not created:
                 settings.addr = addr
                 settings.save()
-            messages.success(request, "La dirección IP se ha guardado correctamente.")
+            messages.success(
+                request, "La dirección IP se ha guardado correctamente.")
         except Exception as e:
             messages.error(request, f"Error al guardar la dirección IP: {e}")
         return redirect("account_settings")
+
+
+class CurrentUserView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        serializer = UserSerializer(user)
+        return Response(serializer.data, status=status.HTTP_200_OK)

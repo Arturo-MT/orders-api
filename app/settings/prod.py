@@ -7,3 +7,6 @@ SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
 
 DATABASES["default"]["CONN_MAX_AGE"] = 600
+
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '').split(',')
+CORS_ALLOWED_ORIGINS = os.getenv('CORS_ALLOWED_ORIGINS', '').split(',')
