@@ -3,6 +3,7 @@ from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from rest_framework.pagination import PageNumberPagination
 from .models import Order, OrderItem, Product, ProductCategory, Store
 from .serializers import OrderSerializer, OrderItemSerializer, ProductSerializer, ProductCategorySerializer, StoreSerializer
 from .utils.print_ticket import print_ticket
@@ -325,3 +326,59 @@ class CreateOrderView(APIView):
             )
 
         return Response(OrderSerializer(order).data, status=status.HTTP_201_CREATED)
+
+
+class DashboardAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        store = request.user.store
+
+        today = timezone.localtime(timezone.now()).date()
+        start_of_day = timezone.make_aware(
+            datetime.combine(today, datetime.min.time()))
+        start_of_week = start_of_day - timedelta(days=start_of_day.weekday())
+        start_of_month = start_of_day.replace(day=1)
+        start_of_year = start_of_day.replace(month=1, day=1)
+
+        all_orders = Order.objects.filter(store=store).order_by('-created_at')
+
+        def calculate_summary(queryset):
+            return {
+                "total_orders": queryset.count(),
+                "total_revenue": sum(order.total for order in queryset)
+            }
+
+        summary = {
+            "today": calculate_summary(all_orders.filter(created_at__date=start_of_day)),
+            "week": calculate_summary(all_orders.filter(created_at__gte=start_of_week)),
+            "month": calculate_summary(all_orders.filter(created_at__gte=start_of_month)),
+            "year": calculate_summary(all_orders.filter(created_at__gte=start_of_year)),
+            "all": calculate_summary(all_orders)
+        }
+
+        filtered_orders = all_orders
+        search = request.GET.get('search', '').strip()
+        if search:
+            filtered_orders = filtered_orders.filter(
+                customer_name__icontains=search)
+
+        paginator = PageNumberPagination()
+        paginator.page_size = 10
+        paginated_orders = paginator.paginate_queryset(
+            filtered_orders, request)
+
+        orders_data = [
+            {
+                "id": o.id,
+                "customer_name": o.customer_name,
+                "total": o.total,
+                "created_at": o.created_at
+            }
+            for o in paginated_orders
+        ]
+
+        return paginator.get_paginated_response({
+            "summary": summary,
+            "orders": orders_data
+        })
