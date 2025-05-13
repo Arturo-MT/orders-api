@@ -5,6 +5,8 @@ from django.db.models import Sum
 from django.dispatch import receiver
 from django.utils.timezone import now
 from datetime import timedelta
+from django.utils import timezone
+from django.db.models.signals import pre_save
 import os
 
 
@@ -78,6 +80,11 @@ class Product(models.Model):
 
 class Order(models.Model):
     TYPES = [('T', 'To go'), ('F', 'For here')]
+    STATUS_CHOICES = [
+        ('P', 'Pendiente'),
+        ('C', 'Completada'),
+        ('X', 'Cancelada'),
+    ]
 
     store = models.ForeignKey(
         Store, on_delete=models.CASCADE, blank=False, null=False)
@@ -86,7 +93,10 @@ class Order(models.Model):
     customer = models.ForeignKey(
         'authentication.CustomUser', on_delete=models.CASCADE, blank=True, null=True)
     customer_name = models.CharField(max_length=255, blank=True, null=True)
-    order_number = models.CharField(max_length=255, blank=True, null=True)
+    status = models.CharField(
+        max_length=20, choices=STATUS_CHOICES, default='P')
+    order_number = models.CharField(
+        max_length=20, unique=True, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -123,3 +133,12 @@ def update_file_path(instance, created, **kwargs):
         os.rename(initial_path, new_path)
         instance.preview.name = f'previews/{instance.id}/preview.jpg'
         instance.save()
+
+
+@receiver(pre_save, sender=Order)
+def set_order_number(sender, instance, **kwargs):
+    if not instance.order_number:
+        today = timezone.localtime().date()
+        date_str = today.strftime('%y%m%d')
+        count_today = Order.objects.filter(created_at__date=today).count() + 1
+        instance.order_number = f'{date_str}-{count_today:03}'

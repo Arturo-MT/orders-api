@@ -372,8 +372,10 @@ class DashboardAPIView(APIView):
             {
                 "id": o.id,
                 "customer_name": o.customer_name,
+                "order_number": o.order_number,
                 "total": o.total,
-                "created_at": o.created_at
+                "created_at": o.created_at,
+                "status": o.status,
             }
             for o in paginated_orders
         ]
