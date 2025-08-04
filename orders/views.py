@@ -325,6 +325,12 @@ class CreateOrderView(APIView):
                 description=description
             )
 
+        order = (
+            Order.objects
+            .prefetch_related('orderitem_set__product')
+            .get(pk=order.pk)
+        )
+
         return Response(OrderSerializer(order).data, status=status.HTTP_201_CREATED)
 
 
