@@ -24,16 +24,12 @@ class ProductSerializer(serializers.ModelSerializer):
 
 
 class OrderItemSerializer(serializers.ModelSerializer):
-    class NestedProductSerializer(serializers.ModelSerializer):
-        class Meta:
-            model = Product
-            fields = ['id', 'name', 'price']
-
-    product = NestedProductSerializer()
+    name = serializers.CharField(source='product.name', read_only=True)
+    product = serializers.IntegerField(source='product.id')
 
     class Meta:
         model = OrderItem
-        fields = ['product', 'quantity', 'price', 'description']
+        fields = ['product', 'name', 'quantity', 'price', 'description']
 
 
 class OrderSerializer(serializers.ModelSerializer):
