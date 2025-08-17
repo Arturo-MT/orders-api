@@ -248,7 +248,7 @@ class ProductCategoryViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return ProductCategory.objects.filter(store=self.request.user.store)
+        return ProductCategory.objects.filter(store=self.request.user.store).order_by('name')
 
 
 class ProductViewSet(viewsets.ModelViewSet):
@@ -257,7 +257,7 @@ class ProductViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return Product.objects.filter(store=self.request.user.store)
+        return Product.objects.filter(store=self.request.user.store).order_by('name')
 
 
 class OrderItemViewSet(viewsets.ModelViewSet):
@@ -295,6 +295,7 @@ class CreateOrderView(APIView):
         customer_name = data.get('customer_name')
         items = data.get('items', [])
         order_type = data.get('type')
+        order_status = data.get('status', 'P')
 
         if not customer_name or not order_type or not items:
             return Response({"error": "Faltan datos obligatorios"}, status=status.HTTP_400_BAD_REQUEST)
@@ -306,6 +307,7 @@ class CreateOrderView(APIView):
             type=order_type,
             customer=request.user,
             store=store,
+            status=order_status
         )
 
         for item in items:
