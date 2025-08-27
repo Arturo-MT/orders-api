@@ -3,17 +3,19 @@ from django.urls import reverse
 from django.contrib.auth import get_user_model
 from rest_framework.test import APITestCase, APIClient
 from rest_framework import status
-from .models import Product, ProductCategory, Store
+from .models import Product, ProductCategory, Store, Order, OrderItem
 from .serializers import ProductSerializer, ProductCategorySerializer
 
 User = get_user_model()
+
 
 class ProductCategoryViewSetTests(TestCase):
 
     @classmethod
     def setUpTestData(cls):
         cls.store = Store.objects.create(name='Test Store')
-        cls.category = ProductCategory.objects.create(name='Drinks', store=cls.store)
+        cls.category = ProductCategory.objects.create(
+            name='Drinks', store=cls.store)
         cls.url = reverse('productcategory-list')
         cls.superuser, created = User.objects.get_or_create(
             email='superuser11@example.com',
@@ -40,7 +42,8 @@ class ProductCategoryViewSetTests(TestCase):
         response = self.client.post(self.url, data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(ProductCategory.objects.count(), 2)
-        self.assertEqual(ProductCategory.objects.get(id=response.data['id']).name, 'Food')
+        self.assertEqual(ProductCategory.objects.get(
+            id=response.data['id']).name, 'Food')
 
 
 class ProductViewSetTests(TestCase):
@@ -48,8 +51,10 @@ class ProductViewSetTests(TestCase):
     @classmethod
     def setUpTestData(cls):
         cls.store = Store.objects.create(name='Test Store')
-        cls.category = ProductCategory.objects.create(name='Drinks', store=cls.store)
-        cls.product = Product.objects.create(name='Soda', category=cls.category, price=10.00, store=cls.store)
+        cls.category = ProductCategory.objects.create(
+            name='Drinks', store=cls.store)
+        cls.product = Product.objects.create(
+            name='Soda', category=cls.category, price=10.00, store=cls.store)
         cls.url = reverse('product-list')
         cls.superuser, created = User.objects.get_or_create(
             email='superuser12@example.com',
@@ -90,7 +95,8 @@ class ProductViewSetTests(TestCase):
         response = self.client.post(self.url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(Product.objects.count(), 2)
-        self.assertEqual(Product.objects.get(id=response.data['id']).name, 'Soda')
+        self.assertEqual(Product.objects.get(
+            id=response.data['id']).name, 'Soda')
 
 
 class OrderViewTestCase(APITestCase):
@@ -99,7 +105,8 @@ class OrderViewTestCase(APITestCase):
     def setUpTestData(cls):
         Product.objects.all().delete()
         cls.store = Store.objects.create(name='Test Store')
-        cls.category = ProductCategory.objects.create(name='Test Category', store=cls.store)
+        cls.category = ProductCategory.objects.create(
+            name='Test Category', store=cls.store)
         cls.superuser, created = User.objects.get_or_create(
             email='superuser13@example.com',
             defaults={
@@ -131,3 +138,50 @@ class OrderViewTestCase(APITestCase):
             category=cls.category,
             store=cls.store,
         )
+
+    def test_delete_duplicate_orders_after_creation(self):
+        self.client.force_authenticate(user=self.superuser)
+
+        order1 = Order.objects.create(
+            customer=self.superuser,
+            customer_name="Cliente Duplicado",
+            type="F",
+            store=self.store,
+        )
+        OrderItem.objects.create(
+            order=order1,
+            product=self.product1,
+            quantity=1,
+            price=self.product1.price
+        )
+
+        order2 = Order.objects.create(
+            customer=self.superuser,
+            customer_name="Cliente Duplicado",
+            type="F",
+            store=self.store,
+        )
+        OrderItem.objects.create(
+            order=order2,
+            product=self.product1,
+            quantity=1,
+            price=self.product1.price
+        )
+
+        order3 = Order.objects.create(
+            customer=self.superuser,
+            customer_name="Cliente no Duplicado",
+            type="F",
+            store=self.store,
+        )
+        OrderItem.objects.create(
+            order=order3,
+            product=self.product1,
+            quantity=2,
+            price=self.product1.price
+        )
+
+        orders = Order.objects.filter(customer_name="Cliente Duplicado")
+
+        self.assertEqual(orders.count(), 2)
+        self.assertEqual(orders.first().order_number, "250827-001")
