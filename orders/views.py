@@ -382,61 +382,84 @@ class SummaryAPIView(APIView):
 
     def get(self, request):
         store = request.user.store
+        period = request.GET.get("period")
+        date_str = request.GET.get("date")
 
-        period = request.query_params.get("period", "all")
-        date_str = request.query_params.get("date")
-
-        base_date = (
-            timezone.make_aware(datetime.strptime(date_str, "%Y-%m-%d"))
-            if date_str
-            else timezone.localtime()
-        )
-
-        # 🔹 Calcular rango
-        if period == "day":
-            start = base_date.replace(
-                hour=0, minute=0, second=0, microsecond=0)
-            end = start + timedelta(days=1)
-
-        elif period == "week":
-            start = base_date - timedelta(days=base_date.weekday())
-            start = start.replace(hour=0, minute=0, second=0, microsecond=0)
-            end = start + timedelta(days=7)
-
-        elif period == "month":
-            start = base_date.replace(
-                day=1, hour=0, minute=0, second=0, microsecond=0)
-            if start.month == 12:
-                end = start.replace(year=start.year + 1, month=1)
-            else:
-                end = start.replace(month=start.month + 1)
-
-        elif period == "year":
-            start = base_date.replace(
-                month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
-            end = start.replace(year=start.year + 1)
-
-        else:  # all
-            start = None
-            end = None
-
-        orders = Order.objects.filter(store=store)
-
-        if start and end:
-            orders = orders.filter(created_at__gte=start, created_at__lt=end)
-
-        summary = orders.aggregate(
-            total_orders=Count("id", distinct=True),
-            total_revenue=Coalesce(
-                Sum("orderitem__price"),
-                Value(0),
-                output_field=DecimalField()
+        if not period or not date_str:
+            return Response(
+                {"detail": "period y date son requeridos"},
+                status=status.HTTP_400_BAD_REQUEST
             )
+
+        try:
+            # 📅 Día (YYYY-MM-DD)
+            if period == "day":
+                base_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+                start = timezone.make_aware(
+                    datetime.combine(base_date, datetime.min.time())
+                )
+                end = start + timedelta(days=1)
+
+            # 📅 Semana (YYYY-MM-DD → semana ISO)
+            elif period == "week":
+                base_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+                start_of_week = base_date - timedelta(days=base_date.weekday())
+                start = timezone.make_aware(
+                    datetime.combine(start_of_week, datetime.min.time())
+                )
+                end = start + timedelta(days=7)
+
+            # 📅 Mes (YYYY-MM)
+            elif period == "month":
+                base_date = datetime.strptime(date_str, "%Y-%m")
+                start = timezone.make_aware(
+                    datetime(base_date.year, base_date.month, 1)
+                )
+
+                if base_date.month == 12:
+                    end = timezone.make_aware(
+                        datetime(base_date.year + 1, 1, 1)
+                    )
+                else:
+                    end = timezone.make_aware(
+                        datetime(base_date.year, base_date.month + 1, 1)
+                    )
+
+            # 📅 Año (YYYY)
+            elif period == "year":
+                year = int(date_str)
+                start = timezone.make_aware(datetime(year, 1, 1))
+                end = timezone.make_aware(datetime(year + 1, 1, 1))
+
+            else:
+                return Response(
+                    {"detail": "period inválido (day | week | month | year)"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+        except (ValueError, TypeError):
+            return Response(
+                {"detail": "Formato de fecha inválido para el periodo"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        orders = Order.objects.filter(
+            store=store,
+            created_at__gte=start,
+            created_at__lt=end
         )
 
-        return Response({
-            "period": period,
-            "start": start,
-            "end": end,
-            **summary
-        }, status=status.HTTP_200_OK)
+        data = orders.aggregate(
+            total_orders=Count("id", distinct=True),
+            total_revenue=Sum("orderitem__price"),
+        )
+
+        return Response(
+            {
+                "summary": {
+                    "total_orders": data["total_orders"] or 0,
+                    "total_revenue": data["total_revenue"] or 0,
+                }
+            },
+            status=status.HTTP_200_OK
+        )
