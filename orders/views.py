@@ -7,6 +7,8 @@ from rest_framework.pagination import PageNumberPagination
 from .models import Order, OrderItem, Product, ProductCategory, Store
 from .serializers import OrderSerializer, OrderItemSerializer, ProductSerializer, ProductCategorySerializer, StoreSerializer
 from .utils.print_ticket import print_ticket
+from django.db.models import Count, Sum, Value, DecimalField
+from django.db.models.functions import Coalesce
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
@@ -381,27 +383,60 @@ class SummaryAPIView(APIView):
     def get(self, request):
         store = request.user.store
 
-        today = timezone.localtime(timezone.now()).date()
-        start_of_day = timezone.make_aware(
-            datetime.combine(today, datetime.min.time()))
-        start_of_week = start_of_day - timedelta(days=start_of_day.weekday())
-        start_of_month = start_of_day.replace(day=1)
-        start_of_year = start_of_day.replace(month=1, day=1)
+        period = request.query_params.get("period", "all")
+        date_str = request.query_params.get("date")
 
-        all_orders = Order.objects.filter(store=store).order_by('-created_at')
+        base_date = (
+            timezone.make_aware(datetime.strptime(date_str, "%Y-%m-%d"))
+            if date_str
+            else timezone.localtime()
+        )
 
-        def calculate_summary(queryset):
-            return {
-                "total_orders": queryset.count(),
-                "total_revenue": sum(order.total for order in queryset)
-            }
+        # 🔹 Calcular rango
+        if period == "day":
+            start = base_date.replace(
+                hour=0, minute=0, second=0, microsecond=0)
+            end = start + timedelta(days=1)
 
-        summary = {
-            "today": calculate_summary(all_orders.filter(created_at__date=start_of_day)),
-            "week": calculate_summary(all_orders.filter(created_at__gte=start_of_week)),
-            "month": calculate_summary(all_orders.filter(created_at__gte=start_of_month)),
-            "year": calculate_summary(all_orders.filter(created_at__gte=start_of_year)),
-            "all": calculate_summary(all_orders)
-        }
+        elif period == "week":
+            start = base_date - timedelta(days=base_date.weekday())
+            start = start.replace(hour=0, minute=0, second=0, microsecond=0)
+            end = start + timedelta(days=7)
 
-        return Response({"summary": summary}, status=status.HTTP_200_OK)
+        elif period == "month":
+            start = base_date.replace(
+                day=1, hour=0, minute=0, second=0, microsecond=0)
+            if start.month == 12:
+                end = start.replace(year=start.year + 1, month=1)
+            else:
+                end = start.replace(month=start.month + 1)
+
+        elif period == "year":
+            start = base_date.replace(
+                month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+            end = start.replace(year=start.year + 1)
+
+        else:  # all
+            start = None
+            end = None
+
+        orders = Order.objects.filter(store=store)
+
+        if start and end:
+            orders = orders.filter(created_at__gte=start, created_at__lt=end)
+
+        summary = orders.aggregate(
+            total_orders=Count("id", distinct=True),
+            total_revenue=Coalesce(
+                Sum("orderitem__price"),
+                Value(0),
+                output_field=DecimalField()
+            )
+        )
+
+        return Response({
+            "period": period,
+            "start": start,
+            "end": end,
+            **summary
+        }, status=status.HTTP_200_OK)
