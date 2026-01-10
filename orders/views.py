@@ -342,6 +342,45 @@ class DashboardAPIView(APIView):
     def get(self, request):
         store = request.user.store
 
+        all_orders = Order.objects.filter(
+            store=store
+        ).order_by('-created_at')
+
+        search = request.GET.get('search', '').strip()
+        if search:
+            all_orders = all_orders.filter(
+                customer_name__icontains=search
+            )
+
+        paginator = PageNumberPagination()
+        paginator.page_size = 10
+        paginated_orders = paginator.paginate_queryset(
+            all_orders, request
+        )
+
+        orders_data = [
+            {
+                "id": o.id,
+                "customer_name": o.customer_name,
+                "order_number": o.order_number,
+                "total": o.total,
+                "created_at": o.created_at,
+                "status": o.status,
+            }
+            for o in paginated_orders
+        ]
+
+        return paginator.get_paginated_response({
+            "orders": orders_data
+        })
+
+
+class SummaryAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        store = request.user.store
+
         today = timezone.localtime(timezone.now()).date()
         start_of_day = timezone.make_aware(
             datetime.combine(today, datetime.min.time()))
@@ -365,30 +404,4 @@ class DashboardAPIView(APIView):
             "all": calculate_summary(all_orders)
         }
 
-        filtered_orders = all_orders
-        search = request.GET.get('search', '').strip()
-        if search:
-            filtered_orders = filtered_orders.filter(
-                customer_name__icontains=search)
-
-        paginator = PageNumberPagination()
-        paginator.page_size = 10
-        paginated_orders = paginator.paginate_queryset(
-            filtered_orders, request)
-
-        orders_data = [
-            {
-                "id": o.id,
-                "customer_name": o.customer_name,
-                "order_number": o.order_number,
-                "total": o.total,
-                "created_at": o.created_at,
-                "status": o.status,
-            }
-            for o in paginated_orders
-        ]
-
-        return paginator.get_paginated_response({
-            "summary": summary,
-            "orders": orders_data
-        })
+        return Response({"summary": summary}, status=status.HTTP_200_OK)

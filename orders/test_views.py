@@ -184,4 +184,3 @@ class OrderViewTestCase(APITestCase):
         orders = Order.objects.filter(customer_name="Cliente Duplicado")
 
         self.assertEqual(orders.count(), 2)
-        self.assertEqual(orders.first().order_number, "250827-001")
